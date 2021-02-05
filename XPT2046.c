@@ -1,5 +1,5 @@
 #include "XPT2046.h"
-#include <fastmath.h>
+//#include <fastmath.h>
 
 SPI_HandleTypeDef *XPT2046_hSPI;
 TIM_HandleTypeDef *XPT2046_htim;
@@ -11,22 +11,19 @@ uint16_t XPT2046_IRQ_pin;
 uint16_t XPT2046_CS_pin;
 
 
-
-
-volatile struct {
+volatile static struct {
 	uint16_t x;
 	uint16_t y;
 	uint16_t z1;
-	uint16_t z2;
+	//	uint16_t z2;
 	TouchEventType event;
-	uint8_t update;
-	uint8_t swapFlip; //0bxys   x-flipX, y-flipY, s - swapXY
+	//	uint8_t update;
+	XPT2046_Orientation swapFlip; //0bxys   x-flipX, y-flipY, s - swapXY
 	uint16_t resX;
 	uint16_t resY;
-
 }touchStatus;
 
-volatile struct {
+volatile static struct {
 	uint16_t x;
 	uint16_t y;
 	TouchEventType event;
@@ -79,7 +76,6 @@ static uint8_t txBuff[RX_TX_BUFF_SIZE]={
 		(XPT2046_COMMAND_BIT | XPT2046_GET_Z1),0,
 		(XPT2046_COMMAND_BIT | XPT2046_GET_Z1),0,
 		0
-
 };
 
 
@@ -98,17 +94,16 @@ void XPT2046_setup(	SPI_HandleTypeDef* _hSPI,
 	touchStatus.x=0;
 	touchStatus.y=0;
 	touchStatus.z1=0;
-	touchStatus.z2=0;
 	touchStatus.event=UP;
-	touchStatus.swapFlip=0;
+	touchStatus.swapFlip=TS_HORISONTAL;
 	touchStatus.resX=320;
 	touchStatus.resY=240;
 
 	return;
 }
 
-void XPT2046_SetSwapFlip(uint8_t sf){
-	touchStatus.swapFlip=sf;
+void XPT2046_SetSwapFlip(XPT2046_Orientation o){
+	touchStatus.swapFlip=o;
 }
 
 void XPT2046_SetResolution(uint16_t resX,uint16_t resY){
@@ -117,7 +112,7 @@ void XPT2046_SetResolution(uint16_t resX,uint16_t resY){
 }
 
 void XPT2046_Start(){
-	XPT2046_ReadData(XPT2046_COMMAND_BIT | XPT2046_GET_Z1);
+	HAL_TIM_Base_Start_IT(XPT2046_htim);
 }
 
 void XPT2046_ReadRawData_DMA(TIM_HandleTypeDef* htim){
@@ -261,10 +256,10 @@ void XPT2046_NewRawEvent(TouchEventType event){
 
 void XPT2046_WaitForUpEvent(){
 	uint8_t r;
+	uint16_t x;
+	uint16_t y;
 	TouchEventType event;
 	do{
-		uint16_t x;
-		uint16_t y;
 		r=XPT2046_GetEvent(&x, &y, &event);
 	}while(!r && event==DOWN);
 
@@ -281,7 +276,7 @@ uint8_t XPT2046_GetEvent(uint16_t* x, uint16_t* y, TouchEventType* event){
 		return 1;
 	}
 }
-
+/*
 uint16_t XPT2046_ReadData(uint8_t command){
 	uint16_t result;
 	HAL_GPIO_WritePin(XPT2046_CS_port, XPT2046_CS_pin, GPIO_PIN_RESET);
@@ -290,59 +285,8 @@ uint16_t XPT2046_ReadData(uint8_t command){
 	HAL_SPI_Receive(XPT2046_hSPI, (uint8_t*)&result, 2, Timeout);
 	HAL_GPIO_WritePin(XPT2046_CS_port, XPT2046_CS_pin, GPIO_PIN_SET);
 	return result;
-}
+}*/
 
-uint16_t XPT2046_GetReading(uint8_t param){
-
-	uint8_t command = XPT2046_COMMAND_BIT | param | XPT2046_IRQ_OFF;
-	static uint16_t results[ITER];
-
-	XPT2046_ReadData(command); //dummy read.
-
-	for (int i = 0; i<ITER;i++){
-		results[i]=(swap_uint16_t((XPT2046_ReadData(command))&0x7FFF)>>3);
-	}
-
-	qsort(results, ITER, sizeof(*results), comp_uint16_t);
-
-	return results[ITER/2];
-
-}
-
-void XPT2046_GetZ(){
-	touchStatus.z1 = XPT2046_GetReading(XPT2046_GET_Z1 | XPT2046_8BIT);
-	touchStatus.z2 = XPT2046_GetReading(XPT2046_GET_Z2 | XPT2046_8BIT);
-	//XPT2046_Start();
-}
-
-void XPT2046_GetX(){
-	touchStatus.x = XPT2046_GetReading(XPT2046_GET_X);
-	XPT2046_Start();
-}
-void XPT2046_GetXY(){
-	touchStatus.x = XPT2046_GetReading(XPT2046_GET_X);
-	touchStatus.y = XPT2046_GetReading(XPT2046_GET_Y);
-	//XPT2046_Start();
-}
-
-uint16_t XPT2046_X(){
-	return touchStatus.x;
-}
-uint16_t XPT2046_Y(){
-	return touchStatus.y;
-}
-uint16_t XPT2046_Z1(){
-	return touchStatus.z1;
-}
-uint16_t XPT2046_Z2(){
-	return touchStatus.z2;
-}
-void XPT2046_Interrupt(){
-
-	XPT2046_GetZ();
-	XPT2046_GetXY();
-	XPT2046_Start();
-}
 
 void XPT2046_GetRawTouchEvent(uint16_t* x, uint16_t* y, TouchEventType event){
 
@@ -382,20 +326,20 @@ void XPT2046_CalibrationTouch(uint16_t x, uint16_t y){
 
 }
 
-void XPT2046_GetCalibratedTouchEvent(uint16_t* x, uint16_t* y, TouchEventType event){
+/*void XPT2046_GetCalibratedTouchEvent(uint16_t* x, uint16_t* y, TouchEventType event){
 
 	XPT2046_GetRawTouchEvent(x, y, event);
 	XPT2046_Calibrate(x,y);
 
-}
+}*/
 
 void XPT2046_GetCalibratedXY(uint16_t* x, uint16_t* y){
 	XPT2046_GetRawXY(x,y);
 	XPT2046_Calibrate(x,y);
 }
 void XPT2046_GetRawXY(uint16_t* x, uint16_t* y){
-	*x=touchStatus.x;
-	*y=touchStatus.y;
+ *x=touchStatus.x;
+ *y=touchStatus.y;
 }
 
 void XPT2046_Calibrate(uint16_t* x, uint16_t* y){
@@ -511,9 +455,9 @@ void XPT2046_Calibrate(uint16_t* x, uint16_t* y){
 
 }
 
-int* XPT2046_GetCalCoeff(){
+/*int* XPT2046_GetCalCoeff(){
 	return (int*)calibration.a;
-}
+}*/
 
 
 int comp_uint16_t(const void *e1, const void *e2){
