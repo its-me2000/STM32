@@ -14,6 +14,29 @@
 #define LCD9341_YELLOW_16BIT_COLOR  0xFFE0
 #define LCD9341_WHITE_16BIT_COLOR   0xFFFF
 
+#define BLACK_COLOR 		0x000u
+#define WHITE_TEXT_COLOR 	0x9EF7u
+#define RED_COLOR 			0x00F8u
+#define DRED_COLOR 			0x0078u
+#define LRED_COLOR 			0xEFFBu
+#define GREEN_COLOR 		0xE007u
+#define LGREEN_COLOR 		0xEF7Fu
+#define DGREEN_COLOR 		0xE003u
+#define BLUE_COLOR 			0x1F00u
+#define LBLUE_COLOR 		0xFF03u
+#define DBLUE_COLOR 		0x0F00u
+#define LGREY_COLOR			0x14A5u
+#define LLGREY_COLOR		0x9AD6u
+#define DDGREY_COLOR 		0x4529u
+#define DGREY_COLOR 		0x8A52u
+#define GREY_COLOR 			0xEF7Bu
+#define PURPLE_COLOR 		0x1FF8u
+#define DPURPLE_COLOR		0x0F78u
+#define LPURPLE_COLOR 		0xFFFBu
+#define YELLOW_COLOR		0xE0FFu
+#define	LYELLOW_COLOR		0xEFFFu
+#define DYELLOW_COLOR		0xE07Bu
+
 //--Command List-----------------------------------------------------
 #define LCD9341_CMD_NO_OPERATION 	0x00U
 #define LCD9341_CMD_SOFTWARE_RESET	0x01U
@@ -137,6 +160,7 @@ void LCD9341_SetRectAccess(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void LCD9341_FillScreen16bit(uint16_t color);
 void LCD9341_DMAInterrupt(SPI_HandleTypeDef* hspi);
 void LCD9341_FillRect16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+void LCD9341_FillRectFromBuff16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t* buff, uint16_t buff_size);
 void LCD9341_DrawPixel16bit(uint16_t x, uint16_t y, uint16_t color);
 void LCD9341_DrawLine16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 void LCD9341_DrawLineLength16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t length, uint16_t color);

@@ -412,6 +412,16 @@ void LCD9341_FillRect16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, u
 		LCD9341_MemoryWriteBytes((uint8_t*)data, 8,size*2);
 	}
 }
+void LCD9341_FillRectFromBuff16bit(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t* buff, uint16_t buff_size){
+	LCD9341_SetRectAccess(x1,y1,x2,y2);
+	uint32_t size = (status.columnAddress_ep - status.columnAddress_sp + 1)*
+						(status.pageAddress_ep   - status.pageAddress_sp    + 1);
+	if(DMA){
+		LCD9341_MemoryWriteBytesDMA(buff,buff_size,size*2);
+	} else {
+		LCD9341_MemoryWriteBytes(buff, buff_size,size*2);
+	}
+}
 
 void LCD9341_DrawPixel16bit(uint16_t x, uint16_t y, uint16_t color){
 	LCD9341_FillRect16bit(x,y,x,y,color);
