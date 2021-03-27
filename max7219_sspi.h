@@ -13,8 +13,8 @@
 void max7219_wake_up(void);
 void max7219_shutdown(void);
 
-void max7219_set_intensity(uint8_t i);
-void max7219_set_number_of_digits(uint8_t n);
+void max7219_set_intensity(uint16_t i);
+void max7219_set_number_of_digits(uint16_t n);
 void max7219_test_mode_on(void);
 void max7219_test_mode_off(void);
 void max7219_set_no_decode();

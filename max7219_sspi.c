@@ -75,7 +75,7 @@ void max7219_shutdown(void){
   * @param	i: intensity value in range 0x0 - 0xF
   * @retval	None
   */
-void max7219_set_intensity(uint8_t i){
+void max7219_set_intensity(uint16_t i){
 	sspi_send_half_word( 0x0A00 | (i & 0x0F) );
 }
 /**
@@ -87,8 +87,13 @@ void max7219_set_intensity(uint8_t i){
   * 		Set value to 7 for use of all 7 segments and DP
   * @retval	None
   */
-void max7219_set_number_of_digits(uint8_t n){
+void max7219_set_number_of_digits(uint16_t n){
 	number_of_digits = (n & 0x07);
+#ifdef COMMON_ANODE
+	sspi_send_half_word( 0x0B07 );
+#elif
+	sspi_send_half_word( 0x0B00 | number_of_digits );
+#endif
 }
 void max7219_test_mode_on(void){
 	sspi_send_half_word( 0x0F01 );
@@ -145,6 +150,7 @@ void max7219_start_default(void){
 	max7219_set_number_of_digits(4);
 	max7219_wake_up();
 	max7219_test_mode_on();
+	HAL_Delay(300);
 	max7219_test_mode_off();
 	max7219_clear();
 
